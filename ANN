@@ -1,0 +1,111 @@
+import tensorflow as tf
+import numpy as np
+import keras
+import matplotlib.pyplot as plt
+from keras.wrappers.scikit_learn import KerasRegressor
+from keras.layers import Dense, Activation, BatchNormalization
+from keras import regularizers
+
+
+%matplotlib inline
+np.random.seed(20181011)
+
+num_training=200
+models = []
+histories = []
+
+def load_data():
+    data = np.loadtxt('Total.csv', delimiter=',', skiprows=1)
+    
+    #mean = np.mean(data, axis=0, keepdims=True)
+    #delta = data - mean
+    #std = np.sqrt(np.mean(delta**2, axis=0, keepdims=True))
+    #data = delta / std
+    
+    data_max = np.max(data, axis=0, keepdims=True)
+    data = data / data_max 
+    
+    np.random.shuffle(data) 
+    
+    X = data[:, 1:]
+    y = data[:, 0]
+
+    return X, y, data_max
+
+X, y, data_max = load_data();
+#X, y = load_data();
+
+print('Dataset: ', X.shape)
+
+X_train = X[:num_training, :]
+y_train = y[:num_training]
+
+X_test = X[num_training:, :]
+y_test = y[num_training:]
+
+print("X_train shape:", X_train.shape)
+print("y_train shape:", y_train.shape)
+print("X_test shape:", X_test.shape)
+print("y_test shape:", y_test.shape)
+
+#####Build ANN using relu and sgmoid
+reg = 0.01
+activation='sigmoid'
+
+model = keras.models.Sequential([
+    Dense(38, activation=activation, kernel_initializer='normal', kernel_regularizer=regularizers.l1_l2(reg, reg)),
+    Dense(38, activation=activation, kernel_initializer='normal', kernel_regularizer=regularizers.l1_l2(reg, reg)),
+    Dense(1, kernel_initializer='normal', kernel_regularizer=regularizers.l1_l2(reg, reg))])
+
+model.compile(optimizer=keras.optimizers.Adam(lr=0.0001),
+              loss="mape",
+              metrics=['mse', 'mae', 'mape', 'cosine'])
+
+history = model.fit(X_train, y_train, epochs=1000, verbose=0, validation_split=0.2)
+models.append(model)
+histories.append(history)
+
+score = model.evaluate(X_test, y_test)
+print(model.metrics_names)
+print(score)
+
+plot_begin = 0
+# plot metrics
+plt.plot(history.history['mean_absolute_percentage_error'][plot_begin:], label="MAPE_train")
+plt.plot(history.history['val_mean_absolute_percentage_error'][plot_begin:], label="MAPE_val")
+plt.legend()
+plt.show()
+
+plt.plot(history.history['mean_squared_error'][plot_begin:], label="MSE_train")
+plt.plot(history.history['val_mean_squared_error'][plot_begin:], label="MSE_val")
+plt.legend()
+plt.show()
+
+plt.plot(history.history['mean_absolute_error'][plot_begin:], label="MAE_train")
+plt.plot(history.history['val_mean_absolute_error'][plot_begin:], label="MAE_val")
+plt.legend()
+plt.show()
+
+predicts = model.predict(X_test)
+
+print(predicts[:, 0])
+print(y_test)
+
+score = model.evaluate(X_train, y_train)
+print(model.metrics_names)
+print(score)
+
+for i, history in reversed(list(enumerate(histories))):
+    model = models[i]
+    score = model.evaluate(X_test, y_test, verbose=0)
+    print("==== ", i, " ===")
+    print("\t", score)
+    plt.plot(history.history['mean_absolute_error'][20:], label="%d" % (i))
+    plt.legend()
+    plt.show()
+ models_bak[2].get_config()
+ model.get_config()
+ result = np.append(predicts, y_test[:, np.newaxis], axis=1)
+ print(result)
+
+    
